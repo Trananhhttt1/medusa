@@ -159,7 +159,7 @@ const BrandsPage = () => {
     <Container className="divide-y p-0">
       <div className="flex items-center justify-between px-6 py-4 ">
         <Heading level="h1" className="font-sans font-medium h1-core">
-          Manage Blogs
+          Manage Brand
         </Heading>
         <Button
           onClick={() => {
