@@ -3,10 +3,12 @@ import { Pencil, PlusMini, Spinner, TagSolid, Trash } from "@medusajs/icons";
 import {
   Button,
   Container,
+  Divider,
   FocusModal,
   Heading,
   Input,
   Label,
+  Prompt,
   Table,
   Textarea,
   toast,
@@ -25,6 +27,7 @@ const BrandsPage = () => {
   ];
   const [createOpen, showCreate, closeCreate] = useToggleState();
   const [updateOpen, showUpdate, closeUpdate] = useToggleState();
+  const [confirmOpen, showConfirm, closeConfirm] = useToggleState();
   const [brandInput, setBrandInput] = useState({
     name: "",
     description: "",
@@ -34,6 +37,12 @@ const BrandsPage = () => {
     name: "",
     description: "",
   });
+  const [brandIdDelete, setBrandIdDelete] = useState(null);
+
+  const [validateForm, setValidateForm] = useState<{
+    name?: string;
+    description?: string;
+  }>({});
 
   // TODO retrieve brands
   const [params, setParams] = useState({
@@ -78,7 +87,8 @@ const BrandsPage = () => {
 
   useEffect(() => {
     setBrandInput({ name: "", description: "" });
-  }, [createOpen]);
+    setValidateForm({});
+  }, [createOpen, updateOpen]);
 
   //post data
   const { mutate: mutateCreateBrand, isPending: isLoadingCreate } = useMutation(
@@ -92,11 +102,22 @@ const BrandsPage = () => {
   );
 
   const onSave = () => {
+    const newErrors: { name?: string; description?: string } = {};
+    if (brandInput.name.trim() === "" || !brandInput.name) {
+      newErrors.name = " * Name không được để trống !";
+    }
+    if (brandInput.description.trim() === "" || !brandInput.description) {
+      newErrors.description = " * Description không được để trống !";
+    }
+    setValidateForm(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      return;
+    }
     mutateCreateBrand(brandInput, {
       onSuccess: () => {
         closeCreate();
         refetch();
-        toast.success("Delete blog successfully");
+        toast.success("Create Brand successfully");
       },
       onError: (err) => {
         toast.error(err.message);
@@ -115,13 +136,27 @@ const BrandsPage = () => {
     }
   );
   const onSaveUpdate = () => {
+    const newErrors: { name?: string; description?: string } = {};
+    if (brandInputUpdate.name.trim() === "" || !brandInputUpdate.name) {
+      newErrors.name = " * Name không được để trống !";
+    }
+    if (
+      brandInputUpdate.description.trim() === "" ||
+      !brandInputUpdate.description
+    ) {
+      newErrors.description = " * Description không được để trống !";
+    }
+    setValidateForm(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      return;
+    }
     mutateUpdateBrand(
       { ...brandInputUpdate, id: brandIdEdit },
       {
         onSuccess: () => {
           closeUpdate();
           refetch();
-          toast.success("Delete blog successfully");
+          toast.success("Update blog successfully");
         },
         onError: (err) => {
           toast.error(err.message);
@@ -139,10 +174,10 @@ const BrandsPage = () => {
         }),
     }
   );
-  const handleOnDelete = (id) => {
-    mutateDeleteBrand(id, {
+  const handleOnDelete = () => {
+    mutateDeleteBrand(brandIdDelete, {
       onSuccess: () => {
-        closeUpdate();
+        closeConfirm();
         refetch();
         toast.success("Delete Brand successfully");
       },
@@ -197,7 +232,8 @@ const BrandsPage = () => {
                         <Button
                           variant="transparent"
                           onClick={() => {
-                            handleOnDelete(item.id);
+                            showConfirm();
+                            setBrandIdDelete(item.id);
                           }}
                         >
                           <Trash />
@@ -220,6 +256,7 @@ const BrandsPage = () => {
         )}
       </div>
 
+      {/* model Create */}
       <FocusModal
         open={createOpen}
         onOpenChange={(modalOpened) => {
@@ -232,23 +269,28 @@ const BrandsPage = () => {
           <FocusModal.Header>
             <Button onClick={onSave}>Save</Button>
           </FocusModal.Header>
-          <FocusModal.Body>
-            <div className="p-10 ">
-              <div className="pb-[20px]">
+          <FocusModal.Body className="flex flex-col items-center py-8">
+            <div>
+              <div>
                 <Label size="small">Name</Label>
                 <Input
-                  placeholder="Placeholder"
+                  placeholder="Enter Name ..."
                   id="input-id"
                   value={brandInput.name}
                   onChange={(e) => {
                     setBrandInput({ ...brandInput, name: e.target.value });
                   }}
                 />
+                {validateForm.name && (
+                  <p className="text-red-500 italic text-xs">
+                    {validateForm.name}
+                  </p>
+                )}
               </div>
               <div>
                 <Label size="small">Descriptoion</Label>
                 <Textarea
-                  placeholder="Product description ..."
+                  placeholder="Enter Description ..."
                   value={brandInput.description}
                   onChange={(e) => {
                     setBrandInput({
@@ -257,12 +299,18 @@ const BrandsPage = () => {
                     });
                   }}
                 />
+                {validateForm.description && (
+                  <p className="text-red-500 italic text-xs">
+                    {validateForm.description}
+                  </p>
+                )}
               </div>
             </div>
           </FocusModal.Body>
         </FocusModal.Content>
       </FocusModal>
 
+      {/* model update */}
       <FocusModal
         open={updateOpen}
         onOpenChange={(modalOpened) => {
@@ -275,9 +323,9 @@ const BrandsPage = () => {
           <FocusModal.Header>
             <Button onClick={onSaveUpdate}>Save</Button>
           </FocusModal.Header>
-          <FocusModal.Body>
-            <div className="p-10 ">
-              <div className="pb-[20px]">
+          <FocusModal.Body className="flex flex-col items-center py-8">
+            <div className="">
+              <div>
                 <Label size="small">Name</Label>
                 <Input
                   placeholder="Placeholder"
@@ -290,6 +338,11 @@ const BrandsPage = () => {
                     });
                   }}
                 />
+                {validateForm.name && (
+                  <p className="text-red-500 italic text-xs">
+                    {validateForm.name}
+                  </p>
+                )}
               </div>
               <div>
                 <Label size="small">Descriptoion</Label>
@@ -303,11 +356,36 @@ const BrandsPage = () => {
                     });
                   }}
                 />
+                {validateForm.name && (
+                  <p className="text-red-500 italic text-xs">
+                    {validateForm.description}
+                  </p>
+                )}
               </div>
             </div>
           </FocusModal.Body>
         </FocusModal.Content>
       </FocusModal>
+      {/* model confirm */}
+      <Prompt open={confirmOpen}>
+        <Prompt.Content>
+          <Prompt.Header>
+            <Prompt.Title>Xác nhận xóa</Prompt.Title>
+          </Prompt.Header>
+          <Prompt.Footer>
+            <Prompt.Cancel onClick={closeConfirm}>Cancel</Prompt.Cancel>
+            <Prompt.Action onClick={handleOnDelete}>
+              {isLoadingDelete ? <Spinner /> : "Xác Nhận"}
+            </Prompt.Action>
+          </Prompt.Footer>
+        </Prompt.Content>
+      </Prompt>
+
+      {isLoadingCreate && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-10 flex items-center justify-center ">
+          <Spinner />
+        </div>
+      )}
     </Container>
   );
 };
